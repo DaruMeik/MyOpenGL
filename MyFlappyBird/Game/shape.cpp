@@ -3,16 +3,19 @@
 ShapeInfo ShapeDict::GetShapeInfo(Shape shape)
 {
 	ShapeInfo shapeInfo;
+	shapeInfo.shape = shape;
 	std::vector<float> vertices;
 	std::vector<unsigned int> indices;
 	switch (shape)
 	{
-	case Shape::rect:
+	case Shape::S_EMPTY:
+		break;
+	case Shape::S_RECT:
 		vertices = std::vector<float>{
-			-0.5f, -0.5f,
-			+0.5f, -0.5f,
-			+0.5f, +0.5f,
-			-0.5f, +0.5f
+			-0.5f, -0.5f, 0.0f, 0.0f,
+			+0.5f, -0.5f, 1.0f, 0.0f,
+			+0.5f, +0.5f, 1.0f, 1.0f,
+			-0.5f, +0.5f, 0.0f, 1.0f
 		};
 		indices = std::vector<unsigned int>{
 			0, 1, 3,

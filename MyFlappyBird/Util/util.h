@@ -2,6 +2,8 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 
+#include <Windows.h>
+
 #include <glad/glad.h>
 
 #include <GLFW/glfw3.h>
@@ -14,10 +16,12 @@
 #include <string>
 #include <unordered_map>
 
-#include <Windows.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <thread>
 #include <vector>
+#include <stack>
+#include <queue>
 
 #define ASSERT(x) if(!(x)) __debugbreak();

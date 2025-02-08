@@ -7,10 +7,11 @@
 #include "Game/game_object.h"
 #include "Script/player.h"
 #include "Script/obstacle.h"
+#include "Script/obstacle_spawner.h"
 
 #pragma region game setting
-const int POSSIBLE_FPS[] = {30, 60, 120, 144};
-int FRAMES_PER_SECOND = 0;
+const std::vector<int> POSSIBLE_FPS = {50, 55, 60};
+int FRAMES_PER_SECOND = 2;
 int SKIP_TICKS = 1000 / POSSIBLE_FPS[FRAMES_PER_SECOND];
 
 float GRAVITY = 9.8f;
@@ -27,7 +28,7 @@ void readInput(GLFWwindow* window, std::vector<bool>& input)
 {
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-    
+
     switch (glfwGetKey(window, GLFW_KEY_SPACE))
     {
     case GLFW_PRESS:
@@ -41,28 +42,64 @@ void readInput(GLFWwindow* window, std::vector<bool>& input)
         break;
     }
 }
+void spawn(std::vector<GameObject*>* gObjs, std::vector<GameObject*>* spawnedObjs, std::vector<GameObject*>* destroyedObjs)
+{
+    for (auto gObj : *spawnedObjs)
+    {
+        gObjs->push_back(gObj);
+        gObj->OnEnable();
+    }
+    spawnedObjs->clear();
+    for (auto gObj : *destroyedObjs)
+    {
+        gObj->CleanObject();
+        auto it = std::find(gObjs->begin(), gObjs->end(), gObj);
+        gObjs->erase(it);
+    }
+    destroyedObjs->clear();
+}
 
-void update(GLFWwindow* window, std::vector<GameObject*>& gObjs, std::vector<GameObject*>& destroyedObjs)
+void update(GLFWwindow* window, std::vector<GameObject*>* gObjs)
 {
     std::vector<bool> input{false};
     readInput(window, input);
 
-    for (auto gObj : gObjs)
+    for (auto gObj : *gObjs)
     {
-        std::cout << "Update" << std::endl;
         gObj->Update(input);
     }
-    for (auto gObj : destroyedObjs)
+}
+
+void render(GLFWwindow* window, std::vector<GameObject*>* gObjs, Shader* shader, glm::mat4* projection, glm::mat4* view)
+{
+    glClearColor(0.0f, 0.2f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    if (gObjs->size() <= 0)
+        return;
+
+    shader->Bind();
+    shader->SetUniformMat4f("projection", *projection);
+    shader->SetUniformMat4f("view", *view);
+
+    for (auto gObj : *gObjs)
     {
-        auto it = std::find(gObjs.begin(), gObjs.end(), gObj);
-        gObjs.erase(it);
+        if (gObj->shapeInfo.shape == Shape::S_EMPTY)
+            continue;
+
+        shader->SetUniformMat4f("model", gObj->modelMatrix);
+        gObj->va->Bind();
+        gObj->vb->Bind();
+        gObj->ib->Bind();
+        glDrawElements(GL_TRIANGLES, gObj->shapeInfo.indices.size(), GL_UNSIGNED_INT, 0);
     }
-    destroyedObjs.clear();
+
+    glfwSwapBuffers(window);
 }
 
 void increaseFPS()
 {
-    if (FRAMES_PER_SECOND == 3)
+    if (FRAMES_PER_SECOND >= POSSIBLE_FPS.size() - 1)
         return;
     FRAMES_PER_SECOND++;
     SKIP_TICKS = 1000 / POSSIBLE_FPS[FRAMES_PER_SECOND];
@@ -123,11 +160,15 @@ int main(void)
 #pragma endregion
     
     std::vector<GameObject*> gObjs;
+    std::vector<GameObject*> spawnedObjs;
     std::vector<GameObject*> destroyedObjs;
-    Player player(ShapeDict::Shape::rect, gObjs, destroyedObjs);
-    player.SetPosition(glm::vec3(-2.0f, 0.0f, 0.0f));
-    gObjs.push_back(&player);
 
+    Player player(Shape::S_RECT, gObjs, spawnedObjs, destroyedObjs);
+    player.SetPosition(glm::vec3(-2.0f, 0.0f, 0.0f));
+    spawnedObjs.push_back(&player);
+
+    ObstacleSpawner spawner(Shape::S_EMPTY, gObjs, spawnedObjs, destroyedObjs);
+    spawnedObjs.push_back(&spawner);
 
 #pragma region va->vb->ib->shader
 
@@ -139,53 +180,38 @@ int main(void)
     shader.Unbind();
 #pragma endregion
 
-    // FPS lock
-    DWORD next_game_tick = GetTickCount();
-
-    int sleep_time = 0;
-
-    for (auto gObj : gObjs)
-    {
-        gObj->Start();
-    }
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
+        //std::cout << "FPS: " << POSSIBLE_FPS[FRAMES_PER_SECOND] << std::endl;
+        /* Spawn / Despawn object here*/
+        spawn(&gObjs, &spawnedObjs, &destroyedObjs);
+
         /* Update here */
-        update(window, gObjs, destroyedObjs);
+        std::thread updateThread (update, window, &gObjs);
+
+        DWORD start = GetTickCount();
 
         /* Render here */
-        glClearColor(0.0f, 0.2f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        
-        shader.Bind();
-        shader.SetUniformMat4f("projection", projection);
-        shader.SetUniformMat4f("view", view);
+        render(window, &gObjs, &shader, &projection, &view);
 
+        DWORD stop = GetTickCount();
 
-
-        for (auto gObj : gObjs)
-        {
-            shader.SetUniformMat4f("model", player.modelMatrix);
-            gObj->va.Bind();
-            gObj->vb.Bind();
-            gObj->ib.Bind();
-            glDrawElements(GL_TRIANGLES, gObj->shapeInfo.indices.size(), GL_UNSIGNED_INT, 0);
-        }
-
-        /* Swap front and back buffers */
-        glfwSwapBuffers(window);
+        updateThread.join();
 
         /* Poll for and process events */
         glfwPollEvents();
 
         // Sleep to wait for tick
-        next_game_tick += SKIP_TICKS;
-        sleep_time = next_game_tick - GetTickCount();
+        int sleep_time = SKIP_TICKS - (stop - start);
         if (sleep_time >= 0)
         {
             Sleep(sleep_time);
+            if (FRAMES_PER_SECOND < POSSIBLE_FPS.size() - 1 && sleep_time >= 1000 / POSSIBLE_FPS[FRAMES_PER_SECOND + 1])
+            {
+                increaseFPS();
+            }
         }
         else
         {

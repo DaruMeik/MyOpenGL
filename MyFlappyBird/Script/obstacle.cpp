@@ -1,11 +1,27 @@
 #include "obstacle.h"
 
-void Obstacle::Start()
+void Obstacle::OnEnable()
 {
-	m_Velocity = glm::vec3(0.0f, -15.0f, 0.0f) * 0.01f;
+	GameObject::OnEnable();
+	SetCollider(-0.5f, -0.5f, 1.0f, 1.0f);
+	name = "Obstacle";
+	m_Velocity = glm::vec3(-10.0f, 0.0f, 0.0f) * 0.01f;
+}
+
+void Obstacle::OnDisable()
+{
+	GameObject::OnDisable();
 }
 
 void Obstacle::Update(std::vector<bool>& input)
 {
+	if (!isEnabled)
+		return;
+
 	GameObject::Update(input);
+	
+	if (modelMatrix[3].x < -6)
+	{
+		OnDisable();
+	}
 }
