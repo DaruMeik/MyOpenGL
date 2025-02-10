@@ -24,4 +24,6 @@
 #include <stack>
 #include <queue>
 
+#include "stb_image.h"
+
 #define ASSERT(x) if(!(x)) __debugbreak();

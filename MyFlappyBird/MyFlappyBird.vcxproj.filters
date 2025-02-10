@@ -51,6 +51,12 @@
     <ClCompile Include="Script\obstacle_spawner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Util\stb_image.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Util\texture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resource\Shader\basic.shader" />
@@ -86,5 +92,25 @@
     <ClInclude Include="Script\obstacle_spawner.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Util\stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Util\texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resource\Texture\Default.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resource\Texture\Player.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resource\Texture\awesomeface.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resource\Texture\wall.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

@@ -5,7 +5,9 @@ void Player::OnEnable()
 	GameObject::OnEnable();
 	modelMatrix = glm::scale(modelMatrix, glm::vec3(0.8f, 0.8f, 0.8f));
 	name = "Player";
-	SetCollider(-0.5f, -0.5f, 1.0f, 1.0f);
+	spritePath = "Resource/Texture/Player.png";
+	SetTexture();
+	SetCollider(-0.4f, -0.4f, 0.8f, 0.8f);
 	m_Acceleration = glm::vec3(0.0f, -9.8f, 0.0f) * 0.001f;
 	m_ReadyToJump = true;
 }

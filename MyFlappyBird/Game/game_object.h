@@ -2,6 +2,7 @@
 #include "shape.h"
 #include "../Util/vertex_array.h"
 #include "../Util/index_buffer.h"
+#include "../Util/texture.h"
 
 struct CollisionBox
 {
@@ -19,16 +20,19 @@ class GameObject
 {
 public:
 	GameObject(Shape shape,
+		Texture& textureList,
 		std::vector<GameObject*>& gObjs,
 		std::vector<GameObject*>& spawnedObjs,
 		std::vector<GameObject*>& destroyedObjs);
 
+	Texture& textureList;
 	std::vector<GameObject*>& container;
 	std::vector<GameObject*>& spawnedContainer;
 	std::vector<GameObject*>& destroyedContainer;
 	ShapeInfo shapeInfo;
 
-	std::string name;
+	std::string name = "Null";
+	std::string spritePath = "Resource/Texture/wall.jpg";
 	bool isEnabled;
 	glm::mat4 modelMatrix;
 
@@ -36,12 +40,15 @@ public:
 	VertexBuffer* vb;
 	VertexBufferLayout* layout;
 	IndexBuffer* ib;
+	unsigned int textureSlot;
 
 	virtual void OnEnable();
 	virtual void OnDisable();
 	virtual void OnCollisionEnter(GameObject* gObj) {};
 	virtual void Update(std::vector<bool>& input);
 	void CleanObject();
+
+	void SetTexture();
 
 	void SetPosition(glm::vec3 pos);
 

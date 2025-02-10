@@ -134,6 +134,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Dependency\glad.c" />
+    <ClCompile Include="Util\texture.cpp" />
+    <ClCompile Include="Util\stb_image.cpp" />
     <ClCompile Include="Game\game_object.cpp" />
     <ClCompile Include="Game\shape.cpp" />
     <ClCompile Include="main.cpp" />
@@ -150,6 +152,8 @@
     <None Include="Resource\Shader\basic.shader" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Util\texture.h" />
+    <ClInclude Include="Util\stb_image.h" />
     <ClInclude Include="Game\game_object.h" />
     <ClInclude Include="Game\shape.h" />
     <ClInclude Include="Script\obstacle.h" />
@@ -160,6 +164,12 @@
     <ClInclude Include="Util\vertex_array.h" />
     <ClInclude Include="Util\vertex_buffer.h" />
     <ClInclude Include="Util\vertex_buffer_layout.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resource\Texture\awesomeface.png" />
+    <Image Include="Resource\Texture\Default.png" />
+    <Image Include="Resource\Texture\Player.png" />
+    <Image Include="Resource\Texture\wall.jpg" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

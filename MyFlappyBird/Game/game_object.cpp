@@ -1,11 +1,13 @@
 #include "game_object.h"
 
-GameObject::GameObject(Shape shape, std::vector<GameObject*>& gObjs, std::vector<GameObject*>& spawnedObjs, std::vector<GameObject*>& destroyedObjs) :
+GameObject::GameObject(Shape shape, Texture& texture, std::vector<GameObject*>& gObjs, std::vector<GameObject*>& spawnedObjs, std::vector<GameObject*>& destroyedObjs) :
+	textureList{texture},
 	container{ gObjs },
 	spawnedContainer {spawnedObjs},
 	destroyedContainer{ destroyedObjs },
 	isEnabled{ false },
 	modelMatrix{ glm::mat4(1.0f) },
+	textureSlot{0},
 	m_Velocity{ glm::vec3(0.0f) },
 	m_Acceleration{ glm::vec3(0.0f) },
 	shapeInfo{ ShapeDict::GetShapeInfo(shape) }
@@ -16,6 +18,7 @@ GameObject::GameObject(Shape shape, std::vector<GameObject*>& gObjs, std::vector
 		vb = new VertexBuffer{ shapeInfo.vertices.data(), sizeof(GLfloat) * shapeInfo.vertices.size(), GL_STATIC_DRAW };
 		layout = new VertexBufferLayout{};
 		ib = new IndexBuffer{ shapeInfo.indices.data(), shapeInfo.indices.size() };
+		SetTexture();
 
 		layout->Push<float>(2);
 		layout->Push<float>(2);
@@ -63,6 +66,11 @@ void GameObject::PhysicsUpdate()
 	modelMatrix = glm::translate(modelMatrix, m_Velocity);
 
 	m_Velocity += m_Acceleration;
+}
+
+void GameObject::SetTexture()
+{
+	textureSlot = textureList.AddTexture(spritePath);
 }
 
 void GameObject::SetPosition(glm::vec3 pos)

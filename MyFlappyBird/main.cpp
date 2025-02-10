@@ -70,7 +70,7 @@ void update(GLFWwindow* window, std::vector<GameObject*>* gObjs)
     }
 }
 
-void render(GLFWwindow* window, std::vector<GameObject*>* gObjs, Shader* shader, glm::mat4* projection, glm::mat4* view)
+void render(GLFWwindow* window, Texture* textureList, std::vector<GameObject*>* gObjs, Shader* shader, glm::mat4* projection, glm::mat4* view)
 {
     glClearColor(0.0f, 0.2f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -87,10 +87,15 @@ void render(GLFWwindow* window, std::vector<GameObject*>* gObjs, Shader* shader,
         if (gObj->shapeInfo.shape == Shape::S_EMPTY)
             continue;
 
+        //std::cout << "Render " << gObj->name << " with texture at slot " << gObj->textureSlot << "." << std::endl;
+        textureList->Bind(gObj->textureSlot);
         shader->SetUniformMat4f("model", gObj->modelMatrix);
+        shader->SetUniform1i("u_Texture", gObj->textureSlot);
+        
         gObj->va->Bind();
         gObj->vb->Bind();
         gObj->ib->Bind();
+        
         glDrawElements(GL_TRIANGLES, gObj->shapeInfo.indices.size(), GL_UNSIGNED_INT, 0);
     }
 
@@ -158,16 +163,20 @@ int main(void)
     view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
 
 #pragma endregion
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
+    Texture texture;
     std::vector<GameObject*> gObjs;
     std::vector<GameObject*> spawnedObjs;
     std::vector<GameObject*> destroyedObjs;
 
-    Player player(Shape::S_RECT, gObjs, spawnedObjs, destroyedObjs);
+    Player player(Shape::S_RECT, texture, gObjs, spawnedObjs, destroyedObjs);
     player.SetPosition(glm::vec3(-2.0f, 0.0f, 0.0f));
     spawnedObjs.push_back(&player);
 
-    ObstacleSpawner spawner(Shape::S_EMPTY, gObjs, spawnedObjs, destroyedObjs);
+    ObstacleSpawner spawner(Shape::S_EMPTY, texture, gObjs, spawnedObjs, destroyedObjs);
     spawnedObjs.push_back(&spawner);
 
 #pragma region va->vb->ib->shader
@@ -194,7 +203,7 @@ int main(void)
         DWORD start = GetTickCount();
 
         /* Render here */
-        render(window, &gObjs, &shader, &projection, &view);
+        render(window, &texture, &gObjs, &shader, &projection, &view);
 
         DWORD stop = GetTickCount();
 

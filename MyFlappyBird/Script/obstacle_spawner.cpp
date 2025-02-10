@@ -49,10 +49,10 @@ void ObstacleSpawner::SpawnObstacle()
 	std::pair<Obstacle*, Obstacle*> obj;
 	if (m_readyPool.empty())
 	{
-		obj.first = new Obstacle(Shape::S_RECT, container, spawnedContainer, destroyedContainer);
+		obj.first = new Obstacle(Shape::S_RECT, textureList, container, spawnedContainer, destroyedContainer);
 		obj.first->modelMatrix = glm::scale(obj.first->modelMatrix, glm::vec3(1.0f, 4.0f, 1.0f));
 		spawnedContainer.push_back(obj.first);
-		obj.second = new Obstacle(Shape::S_RECT, container, spawnedContainer, destroyedContainer);
+		obj.second = new Obstacle(Shape::S_RECT, textureList, container, spawnedContainer, destroyedContainer);
 		obj.second->modelMatrix = glm::scale(obj.second->modelMatrix, glm::vec3(1.0f, 4.0f, 1.0f));
 		spawnedContainer.push_back(obj.second);
 	}
