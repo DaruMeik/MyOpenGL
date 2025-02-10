@@ -134,6 +134,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Dependency\glad.c" />
+    <ClCompile Include="Script\event_system.cpp" />
+    <ClCompile Include="Script\game_manager.cpp" />
     <ClCompile Include="Util\texture.cpp" />
     <ClCompile Include="Util\stb_image.cpp" />
     <ClCompile Include="Game\game_object.cpp" />
@@ -142,7 +144,6 @@
     <ClCompile Include="Script\obstacle.cpp" />
     <ClCompile Include="Script\obstacle_spawner.cpp" />
     <ClCompile Include="Script\player.cpp" />
-    <ClCompile Include="Script\player.h" />
     <ClCompile Include="Util\index_buffer.cpp" />
     <ClCompile Include="Util\shader.cpp" />
     <ClCompile Include="Util\vertex_array.cpp" />
@@ -152,12 +153,15 @@
     <None Include="Resource\Shader\basic.shader" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Script\event_system.h" />
+    <ClInclude Include="Script\game_manager.h" />
+    <ClInclude Include="Script\obstacle.h" />
+    <ClInclude Include="Script\obstacle_spawner.h" />
+    <ClInclude Include="Script\player.h" />
     <ClInclude Include="Util\texture.h" />
     <ClInclude Include="Util\stb_image.h" />
     <ClInclude Include="Game\game_object.h" />
     <ClInclude Include="Game\shape.h" />
-    <ClInclude Include="Script\obstacle.h" />
-    <ClInclude Include="Script\obstacle_spawner.h" />
     <ClInclude Include="Util\index_buffer.h" />
     <ClInclude Include="Util\shader.h" />
     <ClInclude Include="Util\util.h" />

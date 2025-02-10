@@ -6,10 +6,10 @@ class Player : public GameObject
 public:
 	using GameObject::GameObject;
 
-	void OnEnable() override;
-	void OnDisable() override;
-	void Update(std::vector<bool>& input) override;
+	void Awake() override;
+	void Update(std::vector<std::pair<bool, bool>>& input) override;
 	void OnCollisionEnter(GameObject* gObj) override;
 private:
 	bool m_ReadyToJump = true;
+	bool m_IsDead = false;
 };

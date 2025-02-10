@@ -3,6 +3,7 @@
 #include "../Util/vertex_array.h"
 #include "../Util/index_buffer.h"
 #include "../Util/texture.h"
+#include "../Script/event_system.h"
 
 struct CollisionBox
 {
@@ -10,25 +11,32 @@ struct CollisionBox
 	float y;
 	float xSize;
 	float ySize;
-	CollisionBox():
-		x{ 0 }, y{ 0 }, xSize{ 0 }, ySize{ 0 }{ }
-	CollisionBox(float x, float y, float xSize, float ySize) : 
-		x{ x }, y{ y }, xSize{ xSize }, ySize{ ySize }{ }
+	CollisionBox() :
+		x{ 0 }, y{ 0 }, xSize{ 0 }, ySize{ 0 }
+	{
+	}
+	CollisionBox(float x, float y, float xSize, float ySize) :
+		x{ x }, y{ y }, xSize{ xSize }, ySize{ ySize }
+	{
+	}
 };
 
 class GameObject
 {
 public:
 	GameObject(Shape shape,
+		EventSystem& eventSystem,
 		Texture& textureList,
-		std::vector<GameObject*>& gObjs,
-		std::vector<GameObject*>& spawnedObjs,
-		std::vector<GameObject*>& destroyedObjs);
+		std::set<GameObject*>& gObjs,
+		std::queue<GameObject*>& spawnedObjs,
+		std::queue<GameObject*>& destroyedObjs);
+	virtual ~GameObject();
 
 	Texture& textureList;
-	std::vector<GameObject*>& container;
-	std::vector<GameObject*>& spawnedContainer;
-	std::vector<GameObject*>& destroyedContainer;
+	EventSystem& eventSystem;
+	std::set<GameObject*>& container;
+	std::queue<GameObject*>& spawnedContainer;
+	std::queue<GameObject*>& destroyedContainer;
 	ShapeInfo shapeInfo;
 
 	std::string name = "Null";
@@ -36,19 +44,27 @@ public:
 	bool isEnabled;
 	glm::mat4 modelMatrix;
 
-	VertexArray* va;
-	VertexBuffer* vb;
-	VertexBufferLayout* layout;
-	IndexBuffer* ib;
-	unsigned int textureSlot;
+	VertexArray* va = nullptr;
+	VertexBuffer* vb = nullptr;
+	VertexBufferLayout* layout = nullptr;
+	IndexBuffer* ib = nullptr;
+	unsigned int textureSlot = 0;
 
-	virtual void OnEnable();
-	virtual void OnDisable();
+	virtual void Awake() {};
+	virtual void OnEnable() {};
+	virtual void OnDisable() {};
 	virtual void OnCollisionEnter(GameObject* gObj) {};
-	virtual void Update(std::vector<bool>& input);
+	virtual void Update(std::vector<std::pair<bool, bool>>& input);
+
+	void SetEnable(bool enabled);
+
 	void CleanObject();
 
 	void SetTexture();
+
+	void SetVelocity(glm::vec3 vel);
+
+	void SetAccelaration(glm::vec3 accel);
 
 	void SetPosition(glm::vec3 pos);
 

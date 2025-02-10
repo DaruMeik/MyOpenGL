@@ -14,6 +14,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <string>
+#include <functional>
 #include <unordered_map>
 
 #include <iostream>
@@ -23,6 +24,8 @@
 #include <vector>
 #include <stack>
 #include <queue>
+#include <set>
+#include <algorithm>
 
 #include "stb_image.h"
 

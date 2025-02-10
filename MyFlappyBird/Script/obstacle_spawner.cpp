@@ -7,26 +7,33 @@ std::uniform_real_distribution<> dis(-2.0f, 2.0f);
 
 ObstacleSpawner::~ObstacleSpawner()
 {
-	GameObject::~GameObject();
-	//while (!spawnedObjs.empty())
-	//{
-	//    delete spawnedObjs.top();
-	//    spawnedObjs.pop();
-	//}
-	//Obstacle::spawner = this;
+	while (!m_readyPool.empty())
+	{
+		auto p = m_readyPool.front(); m_readyPool.pop();
+		destroyedContainer.push(p.first);
+		destroyedContainer.push(p.second);
+	}
+	while (!m_usedPool.empty())
+	{
+		auto p = m_usedPool.front(); m_usedPool.pop();
+		destroyedContainer.push(p.first);
+		destroyedContainer.push(p.second);
+	}
+
+	auto it = std::find(eventSystem.OnGameOverEvents.begin(), eventSystem.OnGameOverEvents.end(), &f_StopSpawning);
+	eventSystem.OnGameOverEvents.erase(it);
 }
 
-void ObstacleSpawner::OnEnable()
+void ObstacleSpawner::Awake()
 {
-	GameObject::OnEnable();
 	m_NextTimeToSpawn = GetTickCount64() + 2 * 1000;
+	name = "Obstacle Spawner" + std::to_string(container.size());
 	gen.seed(rd());
+	m_IsDead = false;
+	eventSystem.OnGameOverEvents.push_back(&f_StopSpawning);
 }
-void ObstacleSpawner::OnDisable()
-{
-	GameObject::OnDisable();
-}
-void ObstacleSpawner::Update(std::vector<bool>& input)
+
+void ObstacleSpawner::Update(std::vector<std::pair<bool, bool>>& input)
 {
 	if (!isEnabled)
 		return;
@@ -38,7 +45,7 @@ void ObstacleSpawner::Update(std::vector<bool>& input)
 		m_usedPool.pop();
 	}
 
-	if (m_NextTimeToSpawn <= GetTickCount64())
+	if (!m_IsDead && m_NextTimeToSpawn <= GetTickCount64())
 	{
 		m_NextTimeToSpawn = GetTickCount64() + 2 * 1000;
 		SpawnObstacle();
@@ -49,19 +56,19 @@ void ObstacleSpawner::SpawnObstacle()
 	std::pair<Obstacle*, Obstacle*> obj;
 	if (m_readyPool.empty())
 	{
-		obj.first = new Obstacle(Shape::S_RECT, textureList, container, spawnedContainer, destroyedContainer);
+		obj.first = new Obstacle(Shape::S_RECT, eventSystem, textureList, container, spawnedContainer, destroyedContainer);
 		obj.first->modelMatrix = glm::scale(obj.first->modelMatrix, glm::vec3(1.0f, 4.0f, 1.0f));
-		spawnedContainer.push_back(obj.first);
-		obj.second = new Obstacle(Shape::S_RECT, textureList, container, spawnedContainer, destroyedContainer);
+		spawnedContainer.push(obj.first);
+		obj.second = new Obstacle(Shape::S_RECT, eventSystem, textureList, container, spawnedContainer, destroyedContainer);
 		obj.second->modelMatrix = glm::scale(obj.second->modelMatrix, glm::vec3(1.0f, 4.0f, 1.0f));
-		spawnedContainer.push_back(obj.second);
+		spawnedContainer.push(obj.second);
 	}
 	else
 	{
 		obj = m_readyPool.front();
 		m_readyPool.pop();
-		obj.first->OnEnable();
-		obj.second->OnEnable();
+		obj.first->SetEnable(true);
+		obj.second->SetEnable(true);
 	}
 	float height = dis(gen);
 	obj.first->SetPosition(glm::vec3(6.0f, height + 3.0f, 0.0f));
@@ -71,4 +78,9 @@ void ObstacleSpawner::SpawnObstacle()
 void ObstacleSpawner::ReturnObstacle(std::pair<Obstacle*, Obstacle*> obstacle)
 {
 	m_readyPool.push(obstacle);
+}
+
+void ObstacleSpawner::StopSpawning()
+{
+	m_IsDead = true;
 }

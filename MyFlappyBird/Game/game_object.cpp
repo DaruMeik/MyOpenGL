@@ -1,18 +1,24 @@
 #include "game_object.h"
 
-GameObject::GameObject(Shape shape, Texture& texture, std::vector<GameObject*>& gObjs, std::vector<GameObject*>& spawnedObjs, std::vector<GameObject*>& destroyedObjs) :
-	textureList{texture},
+GameObject::GameObject(Shape shape, EventSystem& eventSystem, Texture& texture,
+	std::set<GameObject*>& gObjs, std::queue<GameObject*>& spawnedObjs, std::queue<GameObject*>& destroyedObjs) :
+	eventSystem{ eventSystem },
+	textureList{ texture },
 	container{ gObjs },
-	spawnedContainer {spawnedObjs},
+	spawnedContainer{ spawnedObjs },
 	destroyedContainer{ destroyedObjs },
 	isEnabled{ false },
 	modelMatrix{ glm::mat4(1.0f) },
-	textureSlot{0},
+	va{nullptr},
+	vb{nullptr},
+	layout{nullptr},
+	ib{nullptr},
+	textureSlot{ 0 },
 	m_Velocity{ glm::vec3(0.0f) },
 	m_Acceleration{ glm::vec3(0.0f) },
 	shapeInfo{ ShapeDict::GetShapeInfo(shape) }
 {
-	if (shape != Shape::S_EMPTY)
+	if (shapeInfo.shape != Shape::S_EMPTY)
 	{
 		va = new VertexArray{};
 		vb = new VertexBuffer{ shapeInfo.vertices.data(), sizeof(GLfloat) * shapeInfo.vertices.size(), GL_STATIC_DRAW };
@@ -28,32 +34,40 @@ GameObject::GameObject(Shape shape, Texture& texture, std::vector<GameObject*>& 
 		vb->Unbind();
 		va->Unbind();
 	}
+	Awake();
 }
 
-void GameObject::OnEnable()
+GameObject::~GameObject()
 {
-	isEnabled = true;
+	std::cout << "Delete " << name << "." << std::endl;
+	OnDisable();
+	CleanObject();
 }
 
-void GameObject::OnDisable()
+void GameObject::SetEnable(bool enabled)
 {
-	isEnabled = false;
+	isEnabled = enabled;
+	if (isEnabled)
+		OnEnable();
+	else
+		OnDisable();
 }
 
 void GameObject::CleanObject()
 {
-	std::cout << "Delete object" << std::endl;
-	ib->Unbind();
-	vb->Unbind();
-	va->Unbind();
-	delete ib;
-	delete vb;
-	delete layout;
-	delete va;
-	destroyedContainer.push_back(this);
+	if (shapeInfo.shape != Shape::S_EMPTY)
+	{
+		ib->Unbind();
+		vb->Unbind();
+		va->Unbind();
+		delete ib;
+		delete vb;
+		delete layout;
+		delete va;
+	}
 }
 
-void GameObject::Update(std::vector<bool>& input)
+void GameObject::Update(std::vector<std::pair<bool, bool>>& input)
 {
 	if (!isEnabled)
 		return;
@@ -71,6 +85,16 @@ void GameObject::PhysicsUpdate()
 void GameObject::SetTexture()
 {
 	textureSlot = textureList.AddTexture(spritePath);
+}
+
+void GameObject::SetVelocity(glm::vec3 vec)
+{
+	m_Velocity = vec;
+}
+
+void GameObject::SetAccelaration(glm::vec3 accel)
+{
+	m_Acceleration = accel;
 }
 
 void GameObject::SetPosition(glm::vec3 pos)

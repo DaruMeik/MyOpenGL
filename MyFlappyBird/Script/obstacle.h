@@ -5,8 +5,14 @@ class Obstacle : public GameObject
 {
 public:
 	using GameObject::GameObject;
+	~Obstacle();
 
+	void Awake() override;
 	void OnEnable() override;
-	void OnDisable() override;
-	void Update(std::vector<bool>& input) override;
+	void Update(std::vector<std::pair<bool, bool>>& input) override;
+
+private:
+	bool hasScore = true;
+	std::function<void()> f_StopMovement = [&] {StopMovement(); };
+	void StopMovement();
 };

@@ -45,9 +45,6 @@
     <ClCompile Include="Script\obstacle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Script\player.h">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="Script\obstacle_spawner.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -55,6 +52,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Util\texture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Script\event_system.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Script\game_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -86,16 +89,25 @@
     <ClInclude Include="Game\shape.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Script\obstacle.h">
+    <ClInclude Include="Util\stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Util\texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Script\event_system.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Script\player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Script\obstacle_spawner.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Util\stb_image.h">
+    <ClInclude Include="Script\obstacle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Util\texture.h">
+    <ClInclude Include="Script\game_manager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
