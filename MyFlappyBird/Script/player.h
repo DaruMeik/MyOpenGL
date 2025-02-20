@@ -7,7 +7,7 @@ public:
 	using GameObject::GameObject;
 
 	void Awake() override;
-	void Update(std::vector<std::pair<bool, bool>>& input) override;
+	void Update(std::vector<std::pair<bool, bool>>& input, double deltaTime) override;
 	void OnCollisionEnter(GameObject* gObj) override;
 private:
 	bool m_ReadyToJump = true;

@@ -17,7 +17,7 @@ void GameManager::Awake()
 	eventSystem.OnGameOverEvents.push_back(&f_PrintScore);
 }
 
-void GameManager::Update(std::vector<std::pair<bool, bool>>& input)
+void GameManager::Update(std::vector<std::pair<bool, bool>>& input, double deltaTime)
 {
 	if (input[1].first)
 	{
@@ -57,6 +57,7 @@ void GameManager::PrintScore()
 {
 	std::cout << "Final score: " << m_Score/2 << std::endl;
 	m_Score = 0;
+	std::cout << "Press R to reset the game. （Rを押してゲームをリセットしてください）" << std::endl;
 }
 
 void GameManager::IncreaseScore()

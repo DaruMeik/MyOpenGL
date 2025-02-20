@@ -26,18 +26,18 @@ ObstacleSpawner::~ObstacleSpawner()
 
 void ObstacleSpawner::Awake()
 {
-	m_NextTimeToSpawn = GetTickCount64() + 2 * 1000;
+	m_NextTimeToSpawn = glfwGetTime() + 2;
 	name = "Obstacle Spawner" + std::to_string(container.size());
 	gen.seed(rd());
 	m_IsDead = false;
 	eventSystem.OnGameOverEvents.push_back(&f_StopSpawning);
 }
 
-void ObstacleSpawner::Update(std::vector<std::pair<bool, bool>>& input)
+void ObstacleSpawner::Update(std::vector<std::pair<bool, bool>>& input, double deltaTime)
 {
 	if (!isEnabled)
 		return;
-	GameObject::Update(input);
+	GameObject::Update(input, deltaTime);
 
 	while (!m_usedPool.empty() && !m_usedPool.front().first->isEnabled)
 	{
@@ -45,9 +45,9 @@ void ObstacleSpawner::Update(std::vector<std::pair<bool, bool>>& input)
 		m_usedPool.pop();
 	}
 
-	if (!m_IsDead && m_NextTimeToSpawn <= GetTickCount64())
+	if (!m_IsDead && m_NextTimeToSpawn <= glfwGetTime())
 	{
-		m_NextTimeToSpawn = GetTickCount64() + 2 * 1000;
+		m_NextTimeToSpawn = glfwGetTime() + 2;
 		SpawnObstacle();
 	}
 }

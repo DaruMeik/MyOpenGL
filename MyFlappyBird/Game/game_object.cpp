@@ -67,19 +67,19 @@ void GameObject::CleanObject()
 	}
 }
 
-void GameObject::Update(std::vector<std::pair<bool, bool>>& input)
+void GameObject::Update(std::vector<std::pair<bool, bool>>& input, double deltaTime)
 {
 	if (!isEnabled)
 		return;
-	PhysicsUpdate();
+	PhysicsUpdate(deltaTime);
 	CheckCollision();
 };
 
-void GameObject::PhysicsUpdate()
+void GameObject::PhysicsUpdate(double deltaTime)
 {
-	modelMatrix = glm::translate(modelMatrix, m_Velocity);
+	modelMatrix = glm::translate(modelMatrix, m_Velocity*(float)deltaTime);
 
-	m_Velocity += m_Acceleration;
+	m_Velocity += m_Acceleration * (float)deltaTime;
 }
 
 void GameObject::SetTexture()

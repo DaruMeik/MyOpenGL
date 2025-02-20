@@ -33,7 +33,6 @@ unsigned int Texture::AddTexture(const std::string& path)
 		std::cout << "Failed to load texture at: " << path << std::endl;
 		ASSERT(false);
 	}
-	std::cout << "Finish loading slot " << i << " texture at : " << path << std::endl;
 
 	glGenTextures(1, &m_RendererIDs[i]);
 	glBindTexture(GL_TEXTURE_2D, m_RendererIDs[i]);

@@ -54,7 +54,7 @@ public:
 	virtual void OnEnable() {};
 	virtual void OnDisable() {};
 	virtual void OnCollisionEnter(GameObject* gObj) {};
-	virtual void Update(std::vector<std::pair<bool, bool>>& input);
+	virtual void Update(std::vector<std::pair<bool, bool>>& input, double deltaTime);
 
 	void SetEnable(bool enabled);
 
@@ -78,5 +78,5 @@ protected:
 	CollisionBox m_Collider;
 
 private:
-	void PhysicsUpdate();
+	void PhysicsUpdate(double deltaTime);
 };

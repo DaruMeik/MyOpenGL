@@ -11,7 +11,7 @@ public:
 	~GameManager();
 
 	void Awake() override;
-	void Update(std::vector<std::pair<bool, bool>>& input) override;
+	void Update(std::vector<std::pair<bool, bool>>& input, double deltaTime) override;
 
 private:
 	unsigned int m_Score;

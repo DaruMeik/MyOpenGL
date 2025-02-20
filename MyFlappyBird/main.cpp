@@ -1,3 +1,7 @@
+#include "imgui.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
+
 #include "Util/util.h"
 #include "Util/shader.h"
 #include "Util/vertex_buffer.h"
@@ -9,9 +13,8 @@
 #include "Script/game_manager.h"
 
 #pragma region game setting
-const std::vector<int> POSSIBLE_FPS = { 50, 55, 60 };
-int FRAMES_PER_SECOND = 2;
-int SKIP_TICKS = 1000 / POSSIBLE_FPS[FRAMES_PER_SECOND];
+int TARGET_FPS = 60;
+double SKIP_TICKS = 1.0f / TARGET_FPS;
 
 float GRAVITY = 9.8f;
 #pragma endregion
@@ -79,14 +82,15 @@ void clean(std::set<GameObject*>* gObjs, std::queue<GameObject*>* destroyedObjs)
 
 void update(GLFWwindow* window,
 	std::vector<std::pair<bool, bool>>* input,
-	std::set<GameObject*>* gObjs)
+	std::set<GameObject*>* gObjs,
+	double deltaTime)
 {
 	readInput(window, *input);
 
 	for (auto gObj : *gObjs)
 	{
 		//std::cout << gObj->name << std::endl;
-		gObj->Update(*input);
+		gObj->Update(*input, deltaTime);
 	}
 }
 
@@ -123,22 +127,6 @@ void render(GLFWwindow* window, Texture* textureList, std::set<GameObject*>* gOb
 	}
 
 	glfwSwapBuffers(window);
-}
-
-void increaseFPS()
-{
-	if (FRAMES_PER_SECOND >= POSSIBLE_FPS.size() - 1)
-		return;
-	FRAMES_PER_SECOND++;
-	SKIP_TICKS = 1000 / POSSIBLE_FPS[FRAMES_PER_SECOND];
-}
-
-void reduceFPS()
-{
-	if (FRAMES_PER_SECOND == 0)
-		return;
-	FRAMES_PER_SECOND--;
-	SKIP_TICKS = 1000 / POSSIBLE_FPS[FRAMES_PER_SECOND];
 }
 
 int main(void)
@@ -178,6 +166,19 @@ int main(void)
 
 	glfwSetWindowSizeCallback(window, framebuffer_size_callback);
 
+	// Init ImGUI
+
+	// Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+	// Setup Platform/Renderer backends
+	ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+	ImGui_ImplOpenGL3_Init();
+
 #pragma region not abstract yet stuffs
 	// Camera stuffs
 	glm::mat4 projection = glm::mat4(1.0f);
@@ -212,47 +213,36 @@ int main(void)
 	shader.Unbind();
 #pragma endregion
 
+	// Game Tutorial
+	std::cout << "-- Game tutorial （コントロール） --" << std::endl;
+	std::cout << "Space: Jump (飛ぶ）" << std::endl;
+	std::cout << "R: Reset when game over（リセット）" << std::endl;
+	std::cout << "Q: Quit (止める）" << std::endl;
 
+	double updateStartTime = glfwGetTime();
+	double renderStartTime = glfwGetTime();
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
-		//std::cout << "FPS: " << POSSIBLE_FPS[FRAMES_PER_SECOND] << std::endl;
-		/* Spawn / Despawn object here*/
-		clean(&gObjs, &destroyedObjs);
-		spawn(&gObjs, &spawnedObjs);
+		if (glfwGetTime() >= updateStartTime + SKIP_TICKS)
+		{
+			/* Poll for and process events */
+			glfwPollEvents();
 
-		/* Update here */
-		//std::thread updateThread(update, window, &input, &gObjs);
-		update(window, &input, &gObjs);
+			//std::cout << "FPS: " << POSSIBLE_FPS[FRAMES_PER_SECOND] << std::endl;
+			/* Spawn / Despawn object here*/
+			clean(&gObjs, &destroyedObjs);
+			spawn(&gObjs, &spawnedObjs);
 
-		DWORD start = GetTickCount();
+			/* Update here */
+			update(window, &input, &gObjs, glfwGetTime() - updateStartTime);
+			updateStartTime = glfwGetTime();
+		}
 
 		/* Render here */
 		render(window, &texture, &gObjs, &shader, &projection, &view);
-
-		DWORD stop = GetTickCount();
-
-		//updateThread.join();
-
-		/* Poll for and process events */
-		glfwPollEvents();
-
-		// Sleep to wait for tick
-		int sleep_time = SKIP_TICKS - (stop - start);
-		if (sleep_time >= 0)
-		{
-			Sleep(sleep_time);
-			if (FRAMES_PER_SECOND < POSSIBLE_FPS.size() - 1 && sleep_time >= 1000 / POSSIBLE_FPS[FRAMES_PER_SECOND + 1])
-			{
-				std::cout << "Reduce FPS" << std::endl;
-				increaseFPS();
-			}
-		}
-		else
-		{
-			std::cout << "Increase FPS" << std::endl;
-			reduceFPS();
-		}
+		int FPS = (1.0f / (glfwGetTime() - renderStartTime));
+		renderStartTime = glfwGetTime();
 	}
 	
 	destroyedObjs.push(gameManager);

@@ -7,17 +7,17 @@ void Player::Awake()
 	spritePath = "Resource/Texture/Player.png";
 	SetTexture();
 	SetCollider(-0.4f, -0.4f, 0.8f, 0.8f);
-	m_Acceleration = glm::vec3(0.0f, -9.8f, 0.0f) * 0.001f;
+	m_Acceleration = glm::vec3(0.0f, -9.8f, 0.0f);
 	m_ReadyToJump = true;
 	m_IsDead = false;
 }
 
-void Player::Update(std::vector<std::pair<bool, bool>>& input)
+void Player::Update(std::vector<std::pair<bool, bool>>& input, double deltaTime)
 {
 	if (!isEnabled)
 		return;
 
-	GameObject::Update(input);
+	GameObject::Update(input, deltaTime);
 
 	if (m_IsDead)
 		return;
@@ -27,7 +27,7 @@ void Player::Update(std::vector<std::pair<bool, bool>>& input)
 		if (input[0].second)
 		{
 			//std::cout << "JUMPING!!" << std::endl;
-			m_Velocity = glm::vec3(0.0f, 15.0f, 0.0f) * 0.01f;
+			m_Velocity = glm::vec3(0.0f, 5.0f, 0.0f);
 			input[0].second = false;
 		}
 	}

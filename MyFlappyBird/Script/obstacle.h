@@ -9,7 +9,7 @@ public:
 
 	void Awake() override;
 	void OnEnable() override;
-	void Update(std::vector<std::pair<bool, bool>>& input) override;
+	void Update(std::vector<std::pair<bool, bool>>& input, double deltaTime) override;
 
 private:
 	bool hasScore = true;
