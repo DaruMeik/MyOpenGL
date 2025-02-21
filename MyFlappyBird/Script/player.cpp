@@ -1,4 +1,6 @@
 #include "player.h"
+#include "game_stat.h"
+
 void Player::Awake()
 {
 	SetPosition(glm::vec3(-2.0f, 0.0f, 0.0f));
@@ -7,7 +9,7 @@ void Player::Awake()
 	spritePath = "Resource/Texture/Player.png";
 	SetTexture();
 	SetCollider(-0.4f, -0.4f, 0.8f, 0.8f);
-	m_Acceleration = glm::vec3(0.0f, -9.8f, 0.0f);
+	m_Acceleration = glm::vec3(0.0f, GameStat::GRAVITY, 0.0f);
 	m_ReadyToJump = true;
 	m_IsDead = false;
 }

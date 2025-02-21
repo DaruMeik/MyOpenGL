@@ -9,6 +9,7 @@
 #include "Util/index_buffer.h"
 
 #include "Game/game_object.h"
+#include "Script/game_stat.h"
 #include "Script/event_system.h"
 #include "Script/game_manager.h"
 
@@ -125,8 +126,6 @@ void render(GLFWwindow* window, Texture* textureList, std::set<GameObject*>* gOb
 
 		glDrawElements(GL_TRIANGLES, gObj->shapeInfo.indices.size(), GL_UNSIGNED_INT, 0);
 	}
-
-	glfwSwapBuffers(window);
 }
 
 int main(void)
@@ -213,24 +212,42 @@ int main(void)
 	shader.Unbind();
 #pragma endregion
 
-	// Game Tutorial
-	std::cout << "-- Game tutorial （コントロール） --" << std::endl;
-	std::cout << "Space: Jump (飛ぶ）" << std::endl;
-	std::cout << "R: Reset when game over（リセット）" << std::endl;
-	std::cout << "Q: Quit (止める）" << std::endl;
-
 	double updateStartTime = glfwGetTime();
 	double renderStartTime = glfwGetTime();
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
+		/* Poll for and process events */
+		glfwPollEvents();
+
+		// Start the Dear ImGui frame
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame(); 
+		
+		{
+			static float f = 0.0f;
+			static int counter = 0;
+
+			ImGui::Begin("Game UI");                          // Create a window called "Hello, world!" and append into it.
+
+
+			// Game Tutorial
+			ImGui::Text("-- Control --");
+			ImGui::Text("Space: Jump");
+			ImGui::Text("R: Reset when game over");
+			ImGui::Text("Q: Quit");
+
+			ImGui::Text("Curent score: %d", GameStat::SCORE/2);
+
+			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+			ImGui::End();
+		}
+
+		// To ensure that update is called on a constant FPS (Kinda like Unity FixedUpdate)
 		if (glfwGetTime() >= updateStartTime + SKIP_TICKS)
 		{
-			/* Poll for and process events */
-			glfwPollEvents();
-
-			//std::cout << "FPS: " << POSSIBLE_FPS[FRAMES_PER_SECOND] << std::endl;
-			/* Spawn / Despawn object here*/
+			/* Spawn / Despawn object here */
 			clean(&gObjs, &destroyedObjs);
 			spawn(&gObjs, &spawnedObjs);
 
@@ -240,13 +257,22 @@ int main(void)
 		}
 
 		/* Render here */
+
+
 		render(window, &texture, &gObjs, &shader, &projection, &view);
-		int FPS = (1.0f / (glfwGetTime() - renderStartTime));
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		renderStartTime = glfwGetTime();
+
+		glfwSwapBuffers(window);
 	}
 	
 	destroyedObjs.push(gameManager);
 	clean(&gObjs, &destroyedObjs);
+
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 
 	glfwTerminate();
 	return 0;

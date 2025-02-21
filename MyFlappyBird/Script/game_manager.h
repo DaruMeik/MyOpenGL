@@ -14,7 +14,6 @@ public:
 	void Update(std::vector<std::pair<bool, bool>>& input, double deltaTime) override;
 
 private:
-	unsigned int m_Score;
 	Player* m_Player;
 	ObstacleSpawner* m_ObstacleSpawner;
 

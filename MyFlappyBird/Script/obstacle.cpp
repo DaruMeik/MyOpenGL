@@ -1,4 +1,5 @@
 #include "obstacle.h"
+#include "game_stat.h"
 
 Obstacle::~Obstacle()
 {
@@ -10,7 +11,7 @@ void Obstacle::Awake()
 {
 	SetCollider(-0.5f, -0.5f, 1.0f, 1.0f);
 	name = "Obstacle" + std::to_string(container.size());
-	m_Velocity = glm::vec3(-5.0f, 0.0f, 0.0f);
+	m_Velocity = glm::vec3(-1.0f, 0.0f, 0.0f) * GameStat::OBSTACLE_SPEED;
 	eventSystem.OnGameOverEvents.push_back(&f_StopMovement);
 }
 

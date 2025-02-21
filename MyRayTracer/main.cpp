@@ -1,0 +1,187 @@
+#include "imgui.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
+
+#include "Util/util.h"
+#include "Util/shader.h"
+#include "Util/vertex_buffer.h"
+#include "Util/vertex_array.h"
+#include "Util/index_buffer.h"
+#include "Util/texture.h"
+
+#pragma region callback
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+	glViewport(0, 0, width, height);
+}
+#pragma endregion
+
+void readInput(GLFWwindow* window, std::vector<std::pair<bool, bool>>& input)
+{
+	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, true);
+}
+
+void update(GLFWwindow* window,
+	std::vector<std::pair<bool, bool>>* input)
+{
+	readInput(window, *input);
+
+}
+
+int main(void)
+{
+	GLFWwindow* window;
+
+	/* Initialize the library */
+	if (!glfwInit())
+	{
+		std::cout << "Failed to initialize GLFW" << std::endl;
+		return -1;
+	}
+
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+
+	/* Create a windowed mode window and its OpenGL context */
+	window = glfwCreateWindow(800, 600, "Hello World", NULL, NULL);
+	if (!window)
+	{
+		std::cout << "Failed to create GLFW window" << std::endl;
+		glfwTerminate();
+		return -1;
+	}
+
+	/* Make the window's context current */
+	glfwMakeContextCurrent(window);
+
+	// Init glad
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		std::cout << "Failed to initialize GLAD" << std::endl;
+		return -1;
+	}
+
+	glfwSetWindowSizeCallback(window, framebuffer_size_callback);
+
+	// Init ImGUI
+
+	// Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+	// Setup Platform/Renderer backends
+	ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+	ImGui_ImplOpenGL3_Init();
+
+#pragma region not abstract yet stuffs
+	// Camera stuffs
+	glm::mat4 projection = glm::mat4(1.0f);
+	projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -10.0f, 10.0f);
+	glm::mat4 view = glm::mat4(1.0f);
+	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+	glm::mat4 model = glm::mat4(1.0f);
+
+#pragma endregion
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	std::vector<std::pair<bool, bool>> input{ 2, std::pair<bool,bool>{false,true} }; // .first = has pressed, .second = has released
+
+#pragma region va->vb->ib->shader
+	std::vector<float>vertices = std::vector<float>{
+	-1.0f, -1.0f, 0.0f, 0.0f,
+	+1.0f, -1.0f, 1.0f, 0.0f,
+	+1.0f, +1.0f, 1.0f, 1.0f,
+	-1.0f, +1.0f, 0.0f, 1.0f
+	};
+	std::vector<unsigned int>indices = std::vector<unsigned int>{
+		0, 1, 3,
+		1, 2, 3
+	};
+
+	VertexArray va{};
+	VertexBuffer vb{ vertices.data(), sizeof(GLfloat) * vertices.size(), GL_STATIC_DRAW };
+	VertexBufferLayout layout{};
+	IndexBuffer ib{ indices.data(), indices.size() };
+
+	layout.Push<float>(2);
+	layout.Push<float>(2);
+	va.AddBuffer(vb, layout);
+
+	// Shader
+	Shader shader{ "Resource/Shader/raytracing.shader" };
+	shader.Bind();
+
+	// Texture
+	Texture texture{};
+	unsigned int textureSlot = texture.AddTexture("Resource/Texture/Player.png");
+
+	// Unbind
+	shader.Unbind();
+	ib.Unbind();
+	vb.Unbind();
+	va.Unbind();
+#pragma endregion
+
+	/* Loop until the user closes the window */
+	while (!glfwWindowShouldClose(window))
+	{
+		/* Poll for and process events */
+		glfwPollEvents();
+
+		// Start the Dear ImGui frame
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame(); 
+		
+		{
+			ImGui::Begin("Game UI");                          // Create a window called "Hello, world!" and append into it.
+
+			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+			ImGui::End();
+		}
+
+		/* Update here */
+		update(window, &input);
+		
+
+		/* Render here */
+		glClearColor(0.0f, 0.2f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		shader.Bind();
+		shader.SetUniformMat4f("projection", projection);
+		shader.SetUniformMat4f("view", view);
+		shader.SetUniformMat4f("model", model);
+		
+		texture.Bind(textureSlot);
+		shader.SetUniform1i("u_Texture", textureSlot);
+
+
+		va.Bind();
+		vb.Bind();
+		ib.Bind();
+
+		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+
+
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+		glfwSwapBuffers(window);
+	}
+
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+
+	glfwTerminate();
+	return 0;
+}

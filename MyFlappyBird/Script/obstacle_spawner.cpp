@@ -1,4 +1,5 @@
 #include "obstacle_spawner.h"
+#include "game_stat.h"
 #include <random>
 
 std::random_device rd;
@@ -26,7 +27,7 @@ ObstacleSpawner::~ObstacleSpawner()
 
 void ObstacleSpawner::Awake()
 {
-	m_NextTimeToSpawn = glfwGetTime() + 2;
+	m_NextTimeToSpawn = glfwGetTime() + GameStat::OBSTACLE_SPAWN_TIME;
 	name = "Obstacle Spawner" + std::to_string(container.size());
 	gen.seed(rd());
 	m_IsDead = false;
@@ -47,7 +48,7 @@ void ObstacleSpawner::Update(std::vector<std::pair<bool, bool>>& input, double d
 
 	if (!m_IsDead && m_NextTimeToSpawn <= glfwGetTime())
 	{
-		m_NextTimeToSpawn = glfwGetTime() + 2;
+		m_NextTimeToSpawn = glfwGetTime() + GameStat::OBSTACLE_SPAWN_TIME;
 		SpawnObstacle();
 	}
 }

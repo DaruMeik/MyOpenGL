@@ -1,4 +1,5 @@
 #include "game_manager.h"
+#include "game_stat.h"
 
 GameManager::~GameManager()
 {
@@ -51,16 +52,17 @@ void GameManager::InitGame()
 	m_ObstacleSpawner = new ObstacleSpawner(Shape::S_EMPTY, eventSystem, textureList, 
 		container, spawnedContainer, destroyedContainer);
 	spawnedContainer.push(m_ObstacleSpawner);
+
+	GameStat::SCORE = 0;
 }
 
 void GameManager::PrintScore()
 {
-	std::cout << "Final score: " << m_Score/2 << std::endl;
-	m_Score = 0;
+	std::cout << "Final score: " << GameStat::SCORE/2 << std::endl;
 	std::cout << "Press R to reset the game. （Rを押してゲームをリセットしてください）" << std::endl;
 }
 
 void GameManager::IncreaseScore()
 {
-	m_Score++;
+	GameStat::SCORE++;
 }
