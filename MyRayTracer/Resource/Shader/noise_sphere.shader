@@ -26,16 +26,61 @@ in vec2 fragCoord;
 uniform float iTime;
 uniform vec3 iResolution;
 
+const int MAX_RAY_LEVEL = 5;
+const int SAMPLE_NUM = 20;
 const int NUM_OF_STEPS = 128;
 const float MIN_DIST_TO_SDF = 0.001f;
 const float MAX_DIST_TO_TRAVEL = 64.0f;
+
+const float PI = 3.1415926535f;
+const float MAXFLOAT = 99999.99f;
+
+// ========================================================
+// Util function
+struct RaymarchRes
+{
+    // surface properties
+    float  dist;
+	
+    // material properties
+    vec3  albedo;
+    
+};
 
 float opSmoothUnion(float d1, float d2, float k){
     float h = clamp(0.5f + 0.5f * (d2-d1) / k, 0.0, 1.0);
     return mix(d2, d1, h) - k * h * (1.0 - h);
 }
 
-float sdPlane( vec3 p, vec3 n, float h )
+vec2 randState;
+
+float rand2D()
+{
+    randState.x = fract(sin(dot(randState.xy, vec2(12.9898f, 78.233f))) * 43758.5453f);
+    randState.y = fract(sin(dot(randState.xy, vec2(12.9898f, 78.233f))) * 43758.5453f);
+    
+    return randState.x;
+}
+
+vec3 random_in_unit_sphere()
+{
+    float phi = 2.0f * PI * rand2D();
+    float cosTheta = 2.0f * rand2D() - 1.0f;
+    float u = rand2D();
+
+    float theta = acos(cosTheta);
+    float r = pow(u, 1.0 / 3.0);
+
+    float x = r * sin(theta) * cos(phi);
+    float y = r * sin(theta) * sin(phi);
+    float z = r * cos(theta);
+
+    return vec3(x, y, z);
+}
+
+// ========================================================
+// Geometry SDF function
+float sdPlane(vec3 p, vec3 n, float h )
 {
     // n must be normalized
     return dot(p,n) + h;
@@ -46,110 +91,155 @@ float sdSphere(vec3 p , float r)
 	return length(p) - r;
 }
 
-float map(vec3 p){
+// ========================================================
+// Map function
+RaymarchRes mapFloor(vec3 p){
+    RaymarchRes res;
     float distToSDF = MAX_DIST_TO_TRAVEL;
+    res.dist = distToSDF;
     
-    distToSDF = min(distToSDF, sdPlane(p, vec3(0.0f, 1.0f, 0.0f), 1.0f));
-    
-    float displacement = sin(5.0f * p.x + iTime*2f) * sin(10.0 * p.y + iTime*2f) * sin(15.0 * p.z + iTime*2f) * 0.1f;
-    float distToSphere1 = sdSphere(p - vec3(0.0f, sin(iTime) * 0.5f - 0.5f, 0.0f), 0.5f) + displacement;
-    distToSDF = opSmoothUnion(distToSDF, distToSphere1, 0.5f);
-    // float distToSphere2 = sdSphere(p - vec3(0.75f, 0.0f, 0.0f), 0.25f);
-    // distToSDF = min(distToSDF, opSmoothUnion(distToSphere1, distToSphere2, 0.5f));
-
-    return distToSDF;
-}
-
-float rayMarch(vec3 ro, vec3 rd){
-    float dist = 0.0f;
-
-    for(int i = 0; i < NUM_OF_STEPS; i++){
-        vec3 pos = ro + rd * dist;
-
-        float distToSDF = map(pos);
-
-        if(distToSDF < MIN_DIST_TO_SDF){
-            break;
-        }
-
-        dist += distToSDF;
-
-        if(dist > MAX_DIST_TO_TRAVEL){
-            break;
-        }
+    distToSDF = min(distToSDF, sdPlane(p, vec3(0.0f, 1.0f, 0.0f), 0.5f));
+    if(res.dist > distToSDF){
+        res.dist = distToSDF;
+        res.albedo = vec3(0.678f, 0.663f, 0.569f);
     }
 
-    return dist;
+    return res;
+}
+RaymarchRes mapSphere(vec3 p){
+    RaymarchRes res;
+    float distToSDF = MAX_DIST_TO_TRAVEL;
+    res.dist = distToSDF;
+    
+    float distToSphere1 = sdSphere(p - vec3(0.0f, sin(iTime) * 1.0f - 0.5f, 0.0f), 0.5f);
+    distToSDF = min(distToSDF, distToSphere1);
+
+    if(res.dist > distToSDF){
+        res.dist = distToSDF;
+        res.albedo = vec3(0.596f, 0.847f, 0.937f);
+    }
+
+    return res;
+}
+RaymarchRes map(vec3 p){
+    RaymarchRes res;
+    res.dist = MAX_DIST_TO_TRAVEL;
+
+    RaymarchRes test;
+    
+    test = mapFloor(p);
+    if(res.dist > test.dist){
+        res.dist = test.dist;
+        res.albedo = test.albedo;
+    }
+
+    test = mapSphere(p);
+    if(res.dist > test.dist){
+        // res.dist = test.dist;
+        res.dist = opSmoothUnion(res.dist, test.dist, 0.5f);
+        res.albedo = test.albedo;
+    }
+
+    return res;
 }
 
+// ========================================================
+// Raycast (with raymarch)
 vec3 calcNorm(vec3 p){    
-    const vec3 delta = vec3(0.001, 0.0, 0.0);
+    const vec3 delta = vec3(0.001f, 0.0, 0.0);
 
-    float gradX = map(p + delta.xyy) - map(p - delta.xyy);
-    float gradY = map(p + delta.yxy) - map(p - delta.yxy);
-    float gradZ = map(p + delta.yyx) - map(p - delta.yyx);
+    float gradX = map(p + delta.xyy).dist - map(p - delta.xyy).dist;
+    float gradY = map(p + delta.yxy).dist - map(p - delta.yxy).dist;
+    float gradZ = map(p + delta.yyx).dist - map(p - delta.yyx).dist;
 
     return normalize(vec3(gradX, gradY, gradZ));
 }
 
+vec3 background(vec3 ro, vec3 rd){
+    float t = 0.5f*(rd.y + 1.0f);
+    return (1.0f-t)*vec3(1.0f, 1.0f, 1.0f) + t*vec3(0.5f, 0.7f, 1.0f);
+}
+
+RaymarchRes rayMarch(vec3 ro, vec3 rd){
+    RaymarchRes res;
+    res.dist = 0.0f;
+
+    for(int i = 0; i < NUM_OF_STEPS; i++){
+        vec3 pos = ro + rd * res.dist;
+
+        RaymarchRes tempRes = map(pos);
+
+        if(tempRes.dist < MIN_DIST_TO_SDF){
+            break;
+        }
+
+        res.dist += tempRes.dist;
+        res.albedo = tempRes.albedo;
+
+        if(res.dist > MAX_DIST_TO_TRAVEL){
+            break;
+        }
+    }
+
+    return res;
+}
+
+vec3 rayCast(vec3 ro, vec3 rd, int depth){
+    vec3 col = vec3(1.0f, 1.0f, 1.0f);
+
+    vec3 ro_t = ro;
+    vec3 rd_t = rd;
+
+    for(int i = 0; i < MAX_RAY_LEVEL; i++){
+        RaymarchRes res = rayMarch(ro_t, rd_t);
+
+        if(res.dist < MAX_DIST_TO_TRAVEL){
+            vec3 p = ro + rd * res.dist;
+            vec3 n = calcNorm(p);
+            vec3 target = normalize(n + random_in_unit_sphere());
+
+            col *= res.albedo;
+            ro_t = p+target*0.1f;
+            rd_t = target;
+        }
+        else{
+            col *= background(ro, rd);
+            break;
+        }
+    }
+
+    return col;
+}
+
 void main()
 {
+    randState = fragCoord.xy / iResolution.xy;
+
     // Normalized pixel coordinates (from 0 to 1)
     // Time varying pixel color
-    //vec3 col = vec3(fragCoord.xy, 0.0f);
     vec2 uv = fragCoord;
     uv.x *= iResolution.x / iResolution.y;
 
-    vec3 col = vec3(0.0f);
-
     // Camera
-    vec3 camPos = vec3(2.0f*sin(iTime), 0.0f, 2.0f*cos(iTime));
+    vec3 camPos = vec3(3f*sin(iTime), 0.0f, 3f*cos(iTime));
     vec3 camVUp = vec3(0.0f, 1.0f, 0.0f);
     vec3 camW = normalize(-camPos);
     vec3 camU = normalize(cross(camVUp, camW));
-    vec3 camV = cross(camW, camU);
+    vec3 camV = normalize(cross(camW, camU));
 
-    // Ray origin and Ray direction
-    vec3 ro = camPos;
-    vec3 rd = camW + uv.x * camU + uv.y * camV;
+    vec3 col = vec3(0.0f);
 
-    float dist = rayMarch(ro, rd);
-
-    if(dist < MAX_DIST_TO_TRAVEL){
-        vec3 p = ro + rd * dist;
-        vec3 n = calcNorm(p);
-
-        vec3 lightColor = vec3(1.0f);
-        vec3 lightSource = vec3(2.5f, 2.5f, -2.0f);
-        vec3 lightDir = -normalize(lightSource);
-
-        // diffuse light
-        float diffuseStrength = max(0.0f, dot(-lightDir, n));
-        vec3 diffuse = lightColor * diffuseStrength;
-        
-        // specular (Blinn phong)
-        vec3 viewSource = normalize(ro);
-        vec3 blinnSource = (lightDir + viewSource) * 0.5f;
-        float specularStrength = max(0.0f, dot(blinnSource, n));
-        specularStrength = pow(specularStrength, 64.0f);
-        vec3 specular = lightColor * specularStrength;
-
-        vec3 lighting = diffuse * 0.75f + specular * 0.25f;
-        
-        col = lighting;
-
-        // shadow (rayMarch toward light source)
-        float maxDistToLightSource = length(lightSource - p);
-        ro = p + n*0.1f;
-        rd = -lightDir;
-        float distToLightSource = rayMarch(ro, rd);
-        if(distToLightSource < maxDistToLightSource){
-            col = col * vec3(0.25f);
-        }
-
-        // gamma correction
-        col = pow(col, vec3(1.0f / 2.2f));
+    for(int i = 0; i < SAMPLE_NUM; i++){
+        // Ray origin and Ray direction
+        vec3 ro = camPos;
+        vec3 rd = normalize(camW + (uv.x + rand2D()/iResolution.x) * camU + (uv.y + rand2D()/iResolution.y) * camV);
+        col += rayCast(ro, rd, 0);
     }
+
+    col /= SAMPLE_NUM;
+    
+    // Gamma correction
+    col = pow(col, vec3(1.0f / 2.2f));
 
     // Output to screen
     fragColor = vec4(col,1.0);

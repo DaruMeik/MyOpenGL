@@ -126,13 +126,21 @@ int main(void)
 	noiseSphereShader.SetUniformMat4f("view", view);
 	noiseSphereShader.SetUniformMat4f("model", model);
 	noiseSphereShader.SetUniform3f("iResolution", WIDTH, HEIGHT, 1.0f);
+	noiseSphereShader.Unbind();
+	
+	Shader noiseSphereShaderOrigin{ "Resource/Shader/noise_sphere_2.shader" };
+	noiseSphereShaderOrigin.Bind();
+	noiseSphereShaderOrigin.SetUniformMat4f("projection", projection);
+	noiseSphereShaderOrigin.SetUniformMat4f("view", view);
+	noiseSphereShaderOrigin.SetUniformMat4f("model", model);
+	noiseSphereShaderOrigin.SetUniform3f("iResolution", WIDTH, HEIGHT, 1.0f);
+	noiseSphereShaderOrigin.Unbind();
 
 	//// Texture
 	//Texture texture{};
 	//unsigned int textureSlot = texture.AddTexture("Resource/Texture/Player.png");
 
 	// Unbind
-	noiseSphereShader.Unbind();
 	ib.Unbind();
 	vb.Unbind();
 	va.Unbind();
@@ -140,6 +148,8 @@ int main(void)
 
 	/* Loop until the user closes the window */
 	double startTime = glfwGetTime();
+	double pauseTime = startTime;
+	bool isPausing = false;
 	while (!glfwWindowShouldClose(window))
 	{
 		/* Poll for and process events */
@@ -154,12 +164,22 @@ int main(void)
 		{
 			ImGui::Begin("Control");                          // Create a window called "Hello, world!" and append into it.
 
-			const char* shaders[] = { "Noisy Sphere" };
+			const char* shaders[] = { "Raycast Sphere" , "Noisy Sphere"};
 			ImGui::Combo("Fragment Shader", &CURRENT_SHADER_INDEX, shaders, IM_ARRAYSIZE(shaders));
 
 			if (ImGui::Button("Reset"))
 			{
 				startTime = glfwGetTime();
+			}
+
+			if (ImGui::Button("Pause"))
+			{
+				isPausing = !isPausing;
+				if (isPausing)
+					pauseTime = glfwGetTime();
+				else
+					startTime += glfwGetTime() - pauseTime;
+
 			}
 
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
@@ -182,12 +202,17 @@ int main(void)
 		default:
 			shader = &noiseSphereShader;
 			break;
+		case 1:
+			shader = &noiseSphereShaderOrigin;
+			break;
 		}
 
 		shader->Bind();
 		//texture.Bind(textureSlot);
-
-		shader->SetUniform1f("iTime", glfwGetTime() - startTime);
+		if(isPausing)
+			shader->SetUniform1f("iTime", pauseTime - startTime);
+		else
+			shader->SetUniform1f("iTime", glfwGetTime() - startTime);
 		//shader.SetUniform1i("u_Texture", textureSlot);
 
 
