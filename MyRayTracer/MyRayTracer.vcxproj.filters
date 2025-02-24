@@ -65,7 +65,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resource\Shader\raytracing.shader" />
+    <None Include="Resource\Shader\noise_sphere.shader" />
     <None Include="Dependency\include\glm\detail\func_common.inl">
       <Filter>Header Files</Filter>
     </None>
@@ -1424,5 +1424,8 @@
     <Image Include="Resource\Texture\wall.jpg">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="Dependency\lib\GLFW\glfw3.lib" />
   </ItemGroup>
 </Project>

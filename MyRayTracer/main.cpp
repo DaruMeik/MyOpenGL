@@ -10,6 +10,11 @@
 #include "Util/texture.h"
 
 #pragma region callback
+
+const unsigned int WIDTH = 800;
+const unsigned int HEIGHT = 600;
+int CURRENT_SHADER_INDEX = 0;
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
@@ -26,7 +31,6 @@ void update(GLFWwindow* window,
 	std::vector<std::pair<bool, bool>>* input)
 {
 	readInput(window, *input);
-
 }
 
 int main(void)
@@ -46,7 +50,7 @@ int main(void)
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
 	/* Create a windowed mode window and its OpenGL context */
-	window = glfwCreateWindow(800, 600, "Hello World", NULL, NULL);
+	window = glfwCreateWindow(WIDTH, HEIGHT, "Hello World", NULL, NULL);
 	if (!window)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -116,25 +120,31 @@ int main(void)
 	va.AddBuffer(vb, layout);
 
 	// Shader
-	Shader shader{ "Resource/Shader/raytracing.shader" };
-	shader.Bind();
+	Shader noiseSphereShader{ "Resource/Shader/noise_sphere.shader" };
+	noiseSphereShader.Bind();
+	noiseSphereShader.SetUniformMat4f("projection", projection);
+	noiseSphereShader.SetUniformMat4f("view", view);
+	noiseSphereShader.SetUniformMat4f("model", model);
+	noiseSphereShader.SetUniform3f("iResolution", WIDTH, HEIGHT, 1.0f);
 
-	// Texture
-	Texture texture{};
-	unsigned int textureSlot = texture.AddTexture("Resource/Texture/Player.png");
+	//// Texture
+	//Texture texture{};
+	//unsigned int textureSlot = texture.AddTexture("Resource/Texture/Player.png");
 
 	// Unbind
-	shader.Unbind();
+	noiseSphereShader.Unbind();
 	ib.Unbind();
 	vb.Unbind();
 	va.Unbind();
 #pragma endregion
 
 	/* Loop until the user closes the window */
+	double startTime = glfwGetTime();
 	while (!glfwWindowShouldClose(window))
 	{
 		/* Poll for and process events */
 		glfwPollEvents();
+
 
 		// Start the Dear ImGui frame
 		ImGui_ImplOpenGL3_NewFrame();
@@ -142,7 +152,15 @@ int main(void)
 		ImGui::NewFrame(); 
 		
 		{
-			ImGui::Begin("Game UI");                          // Create a window called "Hello, world!" and append into it.
+			ImGui::Begin("Control");                          // Create a window called "Hello, world!" and append into it.
+
+			const char* shaders[] = { "Noisy Sphere" };
+			ImGui::Combo("Fragment Shader", &CURRENT_SHADER_INDEX, shaders, IM_ARRAYSIZE(shaders));
+
+			if (ImGui::Button("Reset"))
+			{
+				startTime = glfwGetTime();
+			}
 
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 			ImGui::End();
@@ -156,13 +174,21 @@ int main(void)
 		glClearColor(0.0f, 0.2f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		shader.Bind();
-		shader.SetUniformMat4f("projection", projection);
-		shader.SetUniformMat4f("view", view);
-		shader.SetUniformMat4f("model", model);
-		
-		texture.Bind(textureSlot);
-		shader.SetUniform1i("u_Texture", textureSlot);
+		// Set up shader
+		Shader* shader;
+		switch (CURRENT_SHADER_INDEX)
+		{
+		case 0:
+		default:
+			shader = &noiseSphereShader;
+			break;
+		}
+
+		shader->Bind();
+		//texture.Bind(textureSlot);
+
+		shader->SetUniform1f("iTime", glfwGetTime() - startTime);
+		//shader.SetUniform1i("u_Texture", textureSlot);
 
 
 		va.Bind();

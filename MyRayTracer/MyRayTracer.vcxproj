@@ -292,7 +292,7 @@
     <None Include="Dependency\include\glm\gtx\vector_query.inl" />
     <None Include="Dependency\include\glm\gtx\wrap.inl" />
     <None Include="Resource\Shader\basic.shader" />
-    <None Include="Resource\Shader\raytracing.shader" />
+    <None Include="Resource\Shader\noise_sphere.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Dependency\include\glad\glad.h" />
@@ -610,6 +610,9 @@
     <Image Include="Resource\Texture\Default.png" />
     <Image Include="Resource\Texture\Player.png" />
     <Image Include="Resource\Texture\wall.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="Dependency\lib\GLFW\glfw3.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
