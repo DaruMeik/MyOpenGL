@@ -65,7 +65,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resource\Shader\noise_sphere.shader" />
+    <None Include="Resource\Shader\bouncing_ray_marching.shader" />
     <None Include="Dependency\include\glm\detail\func_common.inl">
       <Filter>Header Files</Filter>
     </None>
@@ -481,7 +481,7 @@
       <Filter>Header Files</Filter>
     </None>
     <None Include="Resource\Shader\basic.shader" />
-    <None Include="Resource\Shader\noise_sphere_2.shader" />
+    <None Include="Resource\Shader\base_ray_marching.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Util\shader.h">

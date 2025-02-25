@@ -120,21 +120,21 @@ int main(void)
 	va.AddBuffer(vb, layout);
 
 	// Shader
-	Shader noiseSphereShader{ "Resource/Shader/noise_sphere.shader" };
-	noiseSphereShader.Bind();
-	noiseSphereShader.SetUniformMat4f("projection", projection);
-	noiseSphereShader.SetUniformMat4f("view", view);
-	noiseSphereShader.SetUniformMat4f("model", model);
-	noiseSphereShader.SetUniform3f("iResolution", WIDTH, HEIGHT, 1.0f);
-	noiseSphereShader.Unbind();
+	Shader rayMarchingBouncingShader{ "Resource/Shader/bouncing_ray_marching.shader" };
+	rayMarchingBouncingShader.Bind();
+	rayMarchingBouncingShader.SetUniformMat4f("projection", projection);
+	rayMarchingBouncingShader.SetUniformMat4f("view", view);
+	rayMarchingBouncingShader.SetUniformMat4f("model", model);
+	rayMarchingBouncingShader.SetUniform3f("iResolution", WIDTH, HEIGHT, 1.0f);
+	rayMarchingBouncingShader.Unbind();
 	
-	Shader noiseSphereShaderOrigin{ "Resource/Shader/noise_sphere_2.shader" };
-	noiseSphereShaderOrigin.Bind();
-	noiseSphereShaderOrigin.SetUniformMat4f("projection", projection);
-	noiseSphereShaderOrigin.SetUniformMat4f("view", view);
-	noiseSphereShaderOrigin.SetUniformMat4f("model", model);
-	noiseSphereShaderOrigin.SetUniform3f("iResolution", WIDTH, HEIGHT, 1.0f);
-	noiseSphereShaderOrigin.Unbind();
+	Shader baseRayMarchingShader{ "Resource/Shader/base_ray_marching.shader" };
+	baseRayMarchingShader.Bind();
+	baseRayMarchingShader.SetUniformMat4f("projection", projection);
+	baseRayMarchingShader.SetUniformMat4f("view", view);
+	baseRayMarchingShader.SetUniformMat4f("model", model);
+	baseRayMarchingShader.SetUniform3f("iResolution", WIDTH, HEIGHT, 1.0f);
+	baseRayMarchingShader.Unbind();
 
 	//// Texture
 	//Texture texture{};
@@ -150,6 +150,7 @@ int main(void)
 	double startTime = glfwGetTime();
 	double pauseTime = startTime;
 	bool isPausing = false;
+	float t = 0.0f;
 	while (!glfwWindowShouldClose(window))
 	{
 		/* Poll for and process events */
@@ -164,7 +165,7 @@ int main(void)
 		{
 			ImGui::Begin("Control");                          // Create a window called "Hello, world!" and append into it.
 
-			const char* shaders[] = { "Raycast Sphere" , "Noisy Sphere"};
+			const char* shaders[] = { "Bouncing Raymarching" , "Base Raymarching"};
 			ImGui::Combo("Fragment Shader", &CURRENT_SHADER_INDEX, shaders, IM_ARRAYSIZE(shaders));
 
 			if (ImGui::Button("Reset"))
@@ -179,8 +180,9 @@ int main(void)
 					pauseTime = glfwGetTime();
 				else
 					startTime += glfwGetTime() - pauseTime;
-
 			}
+
+			ImGui::SliderFloat("Sphere metal", &t, 0.0f, 1.0f);
 
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 			ImGui::End();
@@ -200,10 +202,10 @@ int main(void)
 		{
 		case 0:
 		default:
-			shader = &noiseSphereShader;
+			shader = &rayMarchingBouncingShader;
 			break;
 		case 1:
-			shader = &noiseSphereShaderOrigin;
+			shader = &baseRayMarchingShader;
 			break;
 		}
 
@@ -214,6 +216,7 @@ int main(void)
 		else
 			shader->SetUniform1f("iTime", glfwGetTime() - startTime);
 		//shader.SetUniform1i("u_Texture", textureSlot);
+		shader->SetUniform1f("t", t);
 
 
 		va.Bind();

@@ -25,9 +25,10 @@ in vec2 fragCoord;
 
 uniform float iTime;
 uniform vec3 iResolution;
+uniform float t;
 
-const int MAX_RAY_LEVEL = 5;
-const int SAMPLE_NUM = 20;
+const int MAX_RAY_LEVEL = 4;
+const int SAMPLE_NUM = 50;
 const int NUM_OF_STEPS = 128;
 const float MIN_DIST_TO_SDF = 0.001f;
 const float MAX_DIST_TO_TRAVEL = 64.0f;
@@ -44,7 +45,7 @@ struct RaymarchRes
 	
     // material properties
     vec3  albedo;
-    
+    float metal;
 };
 
 float opSmoothUnion(float d1, float d2, float k){
@@ -102,6 +103,9 @@ RaymarchRes mapFloor(vec3 p){
     if(res.dist > distToSDF){
         res.dist = distToSDF;
         res.albedo = vec3(0.678f, 0.663f, 0.569f);
+        res.metal = 0.0f;
+        // res.albedo = vec3(1.0f);
+        // res.metal = 1.0f;
     }
 
     return res;
@@ -111,12 +115,30 @@ RaymarchRes mapSphere(vec3 p){
     float distToSDF = MAX_DIST_TO_TRAVEL;
     res.dist = distToSDF;
     
-    float distToSphere1 = sdSphere(p - vec3(0.0f, sin(iTime) * 1.0f - 0.5f, 0.0f), 0.5f);
-    distToSDF = min(distToSDF, distToSphere1);
+    float displacement = sin(5.0f * p.x + iTime*2f) * sin(10.0 * p.y + iTime*2f) * sin(15.0 * p.z + iTime*2f) * 0.1f;
+    float distToSphere = sdSphere(p - vec3(0.0f, sin(iTime) * 1.0f - 0.5f, 0.0f), 0.5f);
+    distToSDF = min(distToSDF, distToSphere);
 
     if(res.dist > distToSDF){
         res.dist = distToSDF;
         res.albedo = vec3(0.596f, 0.847f, 0.937f);
+        res.metal = t;
+    }    
+
+    return res;
+}
+RaymarchRes mapMetalSphere(vec3 p){
+    RaymarchRes res;
+    float distToSDF = MAX_DIST_TO_TRAVEL;
+    res.dist = distToSDF;
+
+    float distToSphere = sdSphere(p - vec3(1.25f, 0.0f, 0.0f), 0.5f);
+    distToSDF = min(distToSDF, distToSphere);
+
+    if(res.dist > distToSDF){
+        res.dist = distToSDF;
+        res.albedo = vec3(0.596f, 0.847f, 0.937f);
+        res.metal = 1.0f;
     }
 
     return res;
@@ -131,6 +153,7 @@ RaymarchRes map(vec3 p){
     if(res.dist > test.dist){
         res.dist = test.dist;
         res.albedo = test.albedo;
+        res.metal = test.metal;
     }
 
     test = mapSphere(p);
@@ -138,6 +161,15 @@ RaymarchRes map(vec3 p){
         // res.dist = test.dist;
         res.dist = opSmoothUnion(res.dist, test.dist, 0.5f);
         res.albedo = test.albedo;
+        res.metal = test.metal;
+    }
+
+    test = mapMetalSphere(p);
+    if(res.dist > test.dist){
+        // res.dist = test.dist;
+        res.dist = min(res.dist, test.dist);
+        res.albedo = test.albedo;
+        res.metal = test.metal;
     }
 
     return res;
@@ -175,6 +207,7 @@ RaymarchRes rayMarch(vec3 ro, vec3 rd){
 
         res.dist += tempRes.dist;
         res.albedo = tempRes.albedo;
+        res.metal = tempRes.metal;
 
         if(res.dist > MAX_DIST_TO_TRAVEL){
             break;
@@ -196,7 +229,11 @@ vec3 rayCast(vec3 ro, vec3 rd, int depth){
         if(res.dist < MAX_DIST_TO_TRAVEL){
             vec3 p = ro + rd * res.dist;
             vec3 n = calcNorm(p);
-            vec3 target = normalize(n + random_in_unit_sphere());
+            
+            vec3 lambertTarget = normalize(n + random_in_unit_sphere());
+            vec3 metalTarget = normalize(reflect(rd, n));
+
+            vec3 target = normalize((1-res.metal) * lambertTarget + res.metal * metalTarget);
 
             col *= res.albedo;
             ro_t = p+target*0.1f;
@@ -221,7 +258,7 @@ void main()
     uv.x *= iResolution.x / iResolution.y;
 
     // Camera
-    vec3 camPos = vec3(3f*sin(iTime), 0.0f, 3f*cos(iTime));
+    vec3 camPos = vec3(3f*sin(iTime*0.0f), 0.0f, 3f*cos(iTime*0.0f));
     vec3 camVUp = vec3(0.0f, 1.0f, 0.0f);
     vec3 camW = normalize(-camPos);
     vec3 camU = normalize(cross(camVUp, camW));
