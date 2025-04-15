@@ -27,8 +27,8 @@ uniform float iTime;
 uniform vec3 iResolution;
 uniform float t;
 
-const int MAX_RAY_LEVEL = 4;
-const int SAMPLE_NUM = 50;
+const int MAX_RAY_LEVEL = 8;
+const int SAMPLE_NUM = 100;
 const int NUM_OF_STEPS = 128;
 const float MIN_DIST_TO_SDF = 0.001f;
 const float MAX_DIST_TO_TRAVEL = 64.0f;

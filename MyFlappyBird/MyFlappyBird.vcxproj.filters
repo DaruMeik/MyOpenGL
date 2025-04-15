@@ -1454,6 +1454,9 @@
     <ClInclude Include="Script\game_stat.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Dependency\include\imgui\backends\imgui_impl_opengl3_loader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Resource\Texture\Default.png">
