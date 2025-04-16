@@ -1,97 +1,128 @@
 #include "util.h"
 
+std::vector<std::string> split(const std::string& s, char delim)
+{
+	std::vector<std::string> result;
+	std::stringstream ss(s);
+	std::string item;
+
+	while (getline(ss, item, delim))
+	{
+		result.push_back(item);
+	}
+
+	return result;
+}
+
 bool loadOBJ(
-    const char* path,
-    std::vector < glm::vec3 >& out_vertices,
-    std::vector < glm::vec2 >& out_uvs,
-    std::vector < glm::vec3 >& out_normals
+	const std::string& filepath,
+	std::vector < GLfloat >& out_vertices,
+	std::vector < unsigned int >& out_indices
 )
 {
-    std::vector< unsigned int > vertexIndices, uvIndices, normalIndices;
-    std::vector< glm::vec3 > temp_vertices;
-    std::vector< glm::vec2 > temp_uvs;
-    std::vector< glm::vec3 > temp_normals;
+	std::vector< unsigned int > vertexIndices, normalIndices;
+	std::unordered_map<std::string, unsigned int> map;
+	unsigned int index = 0;
+	std::vector< glm::vec3 > temp_vertices;
+	std::vector< glm::vec3 > temp_normals;
 
-    FILE* file = fopen(path, "r");
-    if (file == NULL)
-    {
-        std::cout << "Failed to load obj at " << path << "!" << std::endl;
-        return false;
-    }
+	std::ifstream stream(filepath);
+
+	std::string line;
+	std::stringstream ss[2];
+	if (!stream)
+	{
+		std::cout << "Failed to load obj at " << filepath << "!" << std::endl;
+		return false;
+	}
 
 #pragma region reading file
-    while (true)
-    {
-        char lineHeader[128];
-        // read the first word of the line
-        int res = fscanf(file, "%s", lineHeader);
-        if (res == EOF)
-            break; // EOF = End Of File. Quit the loop.
+	while (true)
+	{
+		char lineHeader[128];
+		// read the first word of the line
+		if (!(stream >> lineHeader))
+			break; // EOF = End Of File. Quit the loop.
 
-        if (strcmp(lineHeader, "v") == 0)
-        {
-            glm::vec3 vertex;
-            fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z);
-            temp_vertices.push_back(vertex);
-        }
-        else if (strcmp(lineHeader, "vt") == 0)
-        {
-            glm::vec2 uv;
-            fscanf(file, "%f %f\n", &uv.x, &uv.y);
-            temp_uvs.push_back(uv);
-        }
-        else if (strcmp(lineHeader, "n") == 0)
-        {
-            glm::vec3 normal;
-            fscanf(file, "%f %f %f\n", &normal.x, &normal.y, &normal.z);
-            temp_normals.push_back(normal);
-        }
-        else if (strcmp(lineHeader, "f") == 0)
-        {
-            std::string vertex1, vertex2, vertex3;
-            unsigned int vertexIndex[3], uvIndex[3], normalIndex[3];
-            int matches = fscanf(file, "%d/%d/%d %d/%d/%d %d/%d/%d\n", 
-                &vertexIndex[0], &uvIndex[0], &normalIndex[0], 
-                &vertexIndex[1], &uvIndex[1], &normalIndex[1], 
-                &vertexIndex[2], &uvIndex[2], &normalIndex[2]);
+		if (strcmp(lineHeader, "v") == 0)
+		{
+			glm::vec3 vertex;
+			stream >> vertex.x >> vertex.y >> vertex.z;
+			temp_vertices.push_back(vertex);
+		}
+		else if (strcmp(lineHeader, "vn") == 0)
+		{
+			glm::vec3 normal;
+			stream >> normal.x >> normal.y >> normal.z;
+			temp_normals.push_back(normal);
+		}
+		else if (strcmp(lineHeader, "f") == 0)
+		{
+			std::string data[3];
+			std::vector<std::string> vertex[3];
+			unsigned int indice[3];
 
-            if (matches != 9)
-            {
-                printf("Failed to load obj. This loader can only handle triangulate face.\n");
-                return false;
-            }
-            vertexIndices.push_back(vertexIndex[0]);
-            vertexIndices.push_back(vertexIndex[1]);
-            vertexIndices.push_back(vertexIndex[2]);
-            uvIndices.push_back(uvIndex[0]);
-            uvIndices.push_back(uvIndex[1]);
-            uvIndices.push_back(uvIndex[2]);
-            normalIndices.push_back(normalIndex[0]);
-            normalIndices.push_back(normalIndex[1]);
-            normalIndices.push_back(normalIndex[2]);
-        }
-    }
+			stream >> data[0] >> data[1] >> data[2];
+
+			for (int i = 0; i < 3; i++)
+			{
+					map[data[i]] = index;
+					index++;
+				indice[i] = map[data[i]];
+				vertex[i] = split(data[i], '/');
+				out_indices.push_back(indice[i]);
+			}
+
+			vertexIndices.push_back(stoi(vertex[0][0]));
+			vertexIndices.push_back(stoi(vertex[1][0]));
+			vertexIndices.push_back(stoi(vertex[2][0]));
+			normalIndices.push_back(stoi(vertex[0][2]));
+			normalIndices.push_back(stoi(vertex[1][2]));
+			normalIndices.push_back(stoi(vertex[2][2]));
+		}
+	}
 #pragma endregion
 
 #pragma region processing data
-    for (unsigned int i = 0; i < vertexIndices.size(); i++)
-    {
-        unsigned int index = vertexIndices[i];
-        glm::vec3 vertex = temp_vertices[index - 1]; // obj index start at 1
-        out_vertices.push_back(vertex);
-    }
-    for (unsigned int i = 0; i < uvIndices.size(); i++)
-    {
-        unsigned int index = uvIndices[i];
-        glm::vec2 uv = temp_uvs[index - 1]; // obj index start at 1
-        out_uvs.push_back(uv);
-    }
-    for (unsigned int i = 0; i < normalIndices.size(); i++)
-    {
-        unsigned int index = normalIndices[i];
-        glm::vec3 normal = temp_normals[index - 1]; // obj index start at 1
-        out_normals.push_back(normal);
-    }
+	for (unsigned int i = 0; i < vertexIndices.size(); i++)
+	{
+		unsigned int index[2];
+		index[0] = vertexIndices[i];
+		index[1] = normalIndices[i];
+		//std::cout << i << ": " << index[0] << " " << index[1] << std::endl;
+		glm::vec3 vertex = temp_vertices[index[0] - 1]; // obj index start at 1
+		glm::vec3 normal = temp_normals[index[1] - 1];
+
+		out_vertices.push_back(vertex.x);
+		out_vertices.push_back(vertex.y);
+		out_vertices.push_back(vertex.z);
+
+		out_vertices.push_back(normal.x);
+		out_vertices.push_back(normal.y);
+		out_vertices.push_back(normal.z);
+	}
 #pragma endregion
-    return true;
+
+	// Debug
+	//std::cout << "DEBUG" << std::endl;
+	//int t = 0;
+	//for (auto c : out_vertices)
+	//{
+	//	std::cout << c << " ";
+	//	t++;
+	//	if (t % 6 == 0)
+	//		std::cout << std::endl;
+	//}
+	//std::cout << std::endl;
+	//t = 0;
+	//for (auto c : out_indices)
+	//{
+	//	std::cout << c << " ";
+	//	t++;
+	//	if (t % 3 == 0)
+	//		std::cout << std::endl;
+	//}
+	//std::cout << "--DEBUG--" << std::endl;
+
+	return true;
 }

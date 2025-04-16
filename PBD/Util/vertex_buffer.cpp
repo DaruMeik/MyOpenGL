@@ -12,6 +12,12 @@ VertexBuffer::~VertexBuffer()
 	glDeleteBuffers(1, &m_RenderedID);
 }
 
+void VertexBuffer::Update(const void* data, unsigned int size, GLenum usage)
+{
+	Bind();
+	glBufferData(GL_ARRAY_BUFFER, size, data, usage);
+}
+
 void VertexBuffer::Bind() const
 {
 	glBindBuffer(GL_ARRAY_BUFFER, m_RenderedID);

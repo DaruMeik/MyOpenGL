@@ -86,31 +86,35 @@ int main(void)
 #pragma region not abstract yet stuffs
 	// Camera stuffs
 	glm::mat4 projection = glm::mat4(1.0f);
-	projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -10.0f, 10.0f);
-	glm::mat4 view = glm::mat4(1.0f);
-	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+	projection = glm::ortho(-0.5f, 0.5f, -0.375f, 0.375f, -10.0f, 10.0f);
+	
+	glm::mat4 cameraModel = glm::mat4(1.0f);
+	cameraModel = glm::translate(cameraModel, glm::vec3(0.0f, 3.0f, 3.0f));
+	cameraModel = glm::rotate(cameraModel, glm::radians(-45.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	glm::mat4 view = glm::inverse(cameraModel);
+	
 	glm::mat4 model = glm::mat4(1.0f);
 
 #pragma endregion
 
-	glEnable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	std::vector<std::pair<bool, bool>> input{ 2, std::pair<bool,bool>{false,true} }; // .first = has pressed, .second = has released
 
 #pragma region va->vb->ib->shader
-	std::vector<glm::vec3>vertices;
-	std::vector<glm::vec2>uvs;
-	std::vector<glm::vec3>normals;
+	std::vector<GLfloat>vertices;
+	std::vector<unsigned int>indices;
 
-	bool res = loadOBJ("cube.obj", vertices, uvs, normals);
+	bool res = loadOBJ("Resource/Obj/bunny.obj", vertices, indices);
 
 	VertexArray va{};
-	VertexBuffer vb{ vertices.data(), vertices.size() + uvs.size(), GL_STATIC_DRAW};
+	VertexBuffer vb{ vertices.data(), sizeof(GLfloat) * vertices.size(), GL_STATIC_DRAW };
 	VertexBufferLayout layout{};
+	IndexBuffer ib{ indices.data(), indices.size() };
 
-	layout.Push<float>(2);
-	layout.Push<float>(2);
+	layout.Push<float>(3);
+	layout.Push<float>(3);
 	va.AddBuffer(vb, layout);
 
 	// Shader
@@ -137,6 +141,7 @@ int main(void)
 	double pauseTime = startTime;
 	bool isPausing = false;
 	float t = 0.0f;
+	double iTime = 0;
 	while (!glfwWindowShouldClose(window))
 	{
 		/* Poll for and process events */
@@ -146,12 +151,12 @@ int main(void)
 		// Start the Dear ImGui frame
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame(); 
-		
+		ImGui::NewFrame();
+
 		{
 			ImGui::Begin("Control");                          // Create a window called "Hello, world!" and append into it.
 
-			const char* shaders[] = { "Base shader"};
+			const char* shaders[] = { "Base shader" };
 			ImGui::Combo("Fragment Shader", &CURRENT_SHADER_INDEX, shaders, IM_ARRAYSIZE(shaders));
 
 			if (ImGui::Button("Reset"))
@@ -174,11 +179,15 @@ int main(void)
 
 		/* Update here */
 		update(window, &input);
-		
+		if (isPausing)
+			iTime = pauseTime - startTime;
+		else
+			iTime = glfwGetTime() - startTime;
+
 
 		/* Render here */
 		glClearColor(0.0f, 0.2f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Set up shader
 		Shader* shader;
@@ -192,16 +201,16 @@ int main(void)
 
 		shader->Bind();
 		//texture.Bind(textureSlot);
-		if(isPausing)
-			shader->SetUniform1f("iTime", pauseTime - startTime);
-		else
-			shader->SetUniform1f("iTime", glfwGetTime() - startTime);
+		model = glm::rotate(model, glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		shader->SetUniformMat4f("model", model);
+		shader->SetUniform1f("iTime", iTime);
 		//shader.SetUniform1i("u_Texture", textureSlot);
 
 		va.Bind();
 		vb.Bind();
 		ib.Bind();
 
+		//glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 8);
 		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 
 
